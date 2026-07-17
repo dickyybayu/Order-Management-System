@@ -1,0 +1,6 @@
+@OMS.API_HostAddress = http://localhost:5009
+
+GET {{OMS.API_HostAddress}}/health
+Accept: application/json
+
+###

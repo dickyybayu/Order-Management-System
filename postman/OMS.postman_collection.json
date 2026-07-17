@@ -1,0 +1,273 @@
+{
+  "info": {
+    "_postman_id": "6ba9982e-d4d1-4dc1-a342-fb597808e0c3",
+    "name": "OMS API",
+    "description": "Order Management System API collection for local development. Set local credentials in the environment before running login requests. No production secrets or JWTs are stored in this collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5009" },
+    { "key": "accessToken", "value": "" },
+    { "key": "adminUserId", "value": "" },
+    { "key": "salesOperatorUserId", "value": "" },
+    { "key": "supervisorUserId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "supplierId", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "customerId", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "dailySalesReportDate", "value": "2026-07-19" }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Response is not a server error', function () {",
+          "  pm.expect(pm.response.code).to.be.below(500);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Health returns 200', function () { pm.response.to.have.status(200); });"] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register sales operator",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{salesOperatorEmail}}\",\n  \"password\": \"{{salesOperatorPassword}}\",\n  \"fullName\": \"Local Sales Operator\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Register returns 201 or duplicate 409', function () { pm.expect([201, 409]).to.include(pm.response.code); });", "if (pm.response.code === 201) { const body = pm.response.json(); pm.environment.set('salesOperatorUserId', body.data.id); }"] }
+            }
+          ]
+        },
+        {
+          "name": "Login admin",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Login admin returns 200', function () { pm.response.to.have.status(200); });", "const body = pm.response.json();", "pm.environment.set('accessToken', body.data.accessToken);", "pm.environment.set('adminUserId', body.data.user.id);"] } }
+          ]
+        },
+        {
+          "name": "Login supervisor",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{supervisorEmail}}\",\n  \"password\": \"{{supervisorPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Login supervisor returns 200', function () { pm.response.to.have.status(200); });", "const body = pm.response.json();", "pm.environment.set('accessToken', body.data.accessToken);", "pm.environment.set('supervisorUserId', body.data.user.id);"] } }
+          ]
+        },
+        {
+          "name": "Login sales operator",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{salesOperatorEmail}}\",\n  \"password\": \"{{salesOperatorPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Login sales operator returns 200', function () { pm.response.to.have.status(200); });", "const body = pm.response.json();", "pm.environment.set('accessToken', body.data.accessToken);", "pm.environment.set('salesOperatorUserId', body.data.user.id);"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "List users", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/users?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users"], "query": [{ "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }] } } },
+        { "name": "Get user", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/users/{{adminUserId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users", "{{adminUserId}}"] } } },
+        {
+          "name": "Create supervisor user",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{supervisorEmail}}\",\n  \"password\": \"{{supervisorPassword}}\",\n  \"fullName\": \"Local Supervisor\",\n  \"role\": \"supervisor\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/users", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Create user returns 201 or duplicate 409', function () { pm.expect([201, 409]).to.include(pm.response.code); });", "if (pm.response.code === 201) { pm.environment.set('supervisorUserId', pm.response.json().data.id); }"] } }
+          ]
+        },
+        { "name": "Update user", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{supervisorEmail}}\",\n  \"fullName\": \"Local Supervisor Updated\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/users/{{supervisorUserId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users", "{{supervisorUserId}}"] } } },
+        { "name": "Update user status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/users/{{supervisorUserId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users", "{{supervisorUserId}}", "status"] } } },
+        { "name": "Update user role", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"role\": \"supervisor\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/users/{{supervisorUserId}}/role", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users", "{{supervisorUserId}}", "role"] } } }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        { "name": "List categories", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/categories?search=&sortBy=createdAt&sortDirection=desc&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categories"], "query": [{ "key": "search", "value": "" }, { "key": "sortBy", "value": "createdAt" }, { "key": "sortDirection", "value": "desc" }, { "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }] } } },
+        { "name": "Get category", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categories", "{{categoryId}}"] } } },
+        {
+          "name": "Create category",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Category {{$timestamp}}\",\n  \"description\": \"Created from Postman\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/categories", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categories"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Create category returns 201', function () { pm.response.to.have.status(201); });", "pm.environment.set('categoryId', pm.response.json().data.id);"] } }]
+        },
+        { "name": "Update category", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Category Updated\",\n  \"description\": \"Updated from Postman\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categories", "{{categoryId}}"] } } },
+        { "name": "Update category status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categories", "{{categoryId}}", "status"] } } }
+      ]
+    },
+    {
+      "name": "Suppliers",
+      "item": [
+        { "name": "List suppliers", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/suppliers?search=&sortBy=createdAt&sortDirection=desc&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "suppliers"], "query": [{ "key": "search", "value": "" }, { "key": "sortBy", "value": "createdAt" }, { "key": "sortDirection", "value": "desc" }, { "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }] } } },
+        { "name": "Get supplier", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/suppliers/{{supplierId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "suppliers", "{{supplierId}}"] } } },
+        {
+          "name": "Create supplier",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Supplier {{$timestamp}}\",\n  \"email\": \"supplier{{$timestamp}}@example.com\",\n  \"phone\": \"021-123456\",\n  \"address\": \"Local test address\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/suppliers", "host": ["{{baseUrl}}"], "path": ["api", "v1", "suppliers"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Create supplier returns 201', function () { pm.response.to.have.status(201); });", "pm.environment.set('supplierId', pm.response.json().data.id);"] } }]
+        },
+        { "name": "Update supplier", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Supplier Updated\",\n  \"email\": \"supplier.updated@example.com\",\n  \"phone\": \"021-654321\",\n  \"address\": \"Updated local test address\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/suppliers/{{supplierId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "suppliers", "{{supplierId}}"] } } },
+        { "name": "Update supplier status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/suppliers/{{supplierId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "suppliers", "{{supplierId}}", "status"] } } }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        { "name": "List products", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/products?search=&categoryId=&supplierId=&isActive=true&sortBy=createdAt&sortDirection=desc&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "products"], "query": [{ "key": "search", "value": "" }, { "key": "categoryId", "value": "", "disabled": true }, { "key": "supplierId", "value": "", "disabled": true }, { "key": "isActive", "value": "true" }, { "key": "sortBy", "value": "createdAt" }, { "key": "sortDirection", "value": "desc" }, { "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }] } } },
+        { "name": "Get product", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "products", "{{productId}}"] } } },
+        {
+          "name": "Create product",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"sku\": \"PM-{{$timestamp}}\",\n  \"name\": \"Postman Product {{$timestamp}}\",\n  \"unit\": \"pcs\",\n  \"price\": 25000,\n  \"stock\": 20,\n  \"categoryId\": \"{{categoryId}}\",\n  \"supplierId\": \"{{supplierId}}\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/products", "host": ["{{baseUrl}}"], "path": ["api", "v1", "products"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Create product returns 201', function () { pm.response.to.have.status(201); });", "pm.environment.set('productId', pm.response.json().data.id);"] } }]
+        },
+        { "name": "Update product", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"sku\": \"PM-UPDATED\",\n  \"name\": \"Postman Product Updated\",\n  \"unit\": \"pcs\",\n  \"price\": 26000,\n  \"stock\": 25,\n  \"categoryId\": \"{{categoryId}}\",\n  \"supplierId\": \"{{supplierId}}\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "products", "{{productId}}"] } } },
+        { "name": "Update product status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/products/{{productId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "products", "{{productId}}", "status"] } } }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        { "name": "List customers", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/customers?search=&isActive=true&sortBy=createdAt&sortDirection=desc&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers"], "query": [{ "key": "search", "value": "" }, { "key": "isActive", "value": "true" }, { "key": "sortBy", "value": "createdAt" }, { "key": "sortDirection", "value": "desc" }, { "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }] } } },
+        { "name": "Get customer", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "{{customerId}}"] } } },
+        {
+          "name": "Create customer",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Customer {{$timestamp}}\",\n  \"email\": \"customer{{$timestamp}}@example.com\",\n  \"phone\": \"08123456789\",\n  \"shippingAddress\": \"Local shipping address\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/customers", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Create customer returns 201', function () { pm.response.to.have.status(201); });", "pm.environment.set('customerId', pm.response.json().data.id);"] } }]
+        },
+        { "name": "Update customer", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Customer Updated\",\n  \"email\": \"customer.updated@example.com\",\n  \"phone\": \"08987654321\",\n  \"shippingAddress\": \"Updated local shipping address\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "{{customerId}}"] } } },
+        { "name": "Update customer status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "{{customerId}}", "status"] } } }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create order",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"currencyCode\": \"IDR\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 1\n    }\n  ]\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Create order returns 201', function () { pm.response.to.have.status(201); });", "pm.environment.set('orderId', pm.response.json().data.id);"] } }]
+        },
+        { "name": "List orders", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/orders?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders"], "query": [{ "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }] } } },
+        { "name": "List orders - filtered sorted paged", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/orders?status=Pending&customerId={{customerId}}&sortBy=createdAt&sortDirection=desc&page=1&pageSize=10", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders"], "query": [{ "key": "status", "value": "Pending" }, { "key": "customerId", "value": "{{customerId}}" }, { "key": "sortBy", "value": "createdAt" }, { "key": "sortDirection", "value": "desc" }, { "key": "page", "value": "1" }, { "key": "pageSize", "value": "10" }] } } },
+        { "name": "Get order", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}"] } } },
+        { "name": "Approve order", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/approve", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "approve"] } } },
+        { "name": "Ship order", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"trackingNumber\": \"JNE-123456\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/ship", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "ship"] } } },
+        { "name": "Deliver order", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/deliver", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "deliver"] } } },
+        { "name": "Cancel order", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Customer requested cancellation.\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/cancel", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "cancel"] } } },
+        { "name": "Get order history", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/history", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "history"] } } }
+      ]
+    },
+    {
+      "name": "Reports / Background Jobs",
+      "item": [
+        {
+          "name": "Get daily sales report",
+          "request": {
+            "description": "Read-only endpoint for retrieving an already-generated persisted daily sales report. Requires admin or supervisor.",
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/daily-sales?date={{dailySalesReportDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "daily-sales"],
+              "query": [{ "key": "date", "value": "{{dailySalesReportDate}}" }]
+            }
+          }
+        },
+        {
+          "name": "Development only - run daily sales report job",
+          "request": {
+            "description": "Development-only diagnostic endpoint. This route is mapped only when ASPNETCORE_ENVIRONMENT=Development and is excluded from Swagger.",
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/v1/dev/jobs/daily-sales-report/run", "host": ["{{baseUrl}}"], "path": ["api", "v1", "dev", "jobs", "daily-sales-report", "run"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exchange Rates",
+      "item": [
+        {
+          "name": "Get USD to IDR exchange rate",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/exchange-rates?from=USD&to=IDR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "exchange-rates"],
+              "query": [
+                { "key": "from", "value": "USD" },
+                { "key": "to", "value": "IDR" }
+              ]
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Exchange rate returns 200 when external service is available', function () { pm.expect([200, 503]).to.include(pm.response.code); });"] } }
+          ]
+        }
+      ]
+    }
+  ]
+}
